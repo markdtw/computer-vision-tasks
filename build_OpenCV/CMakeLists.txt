@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 2.8)
+project( shit )
+find_package( OpenCV REQUIRED )
+set( IN "" CACHE FILEPATH "user input file" )
+set( OUT "" CACHE STRING "output file name" )
+add_executable( ${OUT} ${IN} )
+target_link_libraries( ${OUT} ${OpenCV_LIBS} )

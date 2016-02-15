@@ -1,0 +1,2 @@
+cmake -DIN:FILEPATH=${1} -DOUT:STRING=${2} .
+make
