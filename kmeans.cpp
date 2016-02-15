@@ -16,10 +16,9 @@ Mat color_quantization(Mat& labels, Mat& centers, Mat& src) {
     centers = centers.reshape(3);
 
     // The label is replaced by the corresponding(B, G, R) to make the final image rgb.
-    MatIterator_<Vec3b> it = rgb.begin<Vec3b>();
-    MatConstIterator_<int> lit = labels.begin<int>();
-    for (; it != rgb.end<Vec3b>(); it++, lit++) {
-        const Vec3b& rgb = centers.ptr<Vec3b>(*lit)[0];
+    MatConstIterator_<int>  lit = labels.begin<int>();
+    for (MatIterator_<Vec3b> it = rgb.begin<Vec3b>(); it != rgb.end<Vec3b>(); it++) {
+        const Vec3b& rgb = centers.ptr<Vec3b>(*lit++)[0];
         *it = rgb;
     }
 
