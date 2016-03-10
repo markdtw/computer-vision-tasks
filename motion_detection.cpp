@@ -24,7 +24,7 @@ void processVideo(int webcam, int structure_size) {
     pMOG2 = createBackgroundSubtractorMOG2(); //MOG2 approach
 
     //morphology element
-    Mat element = getStructuringElement(MORPH_RECT, Size(structure_size, structure_size), Point(5, 5));
+    Mat element = getStructuringElement(MORPH_RECT, Size(structure_size, structure_size));
 
     //read input data. ESC or 'q' for quitting
     for (;;) {
@@ -35,7 +35,7 @@ void processVideo(int webcam, int structure_size) {
         pMOG2->apply(frame, fgMaskMOG2);
         
         //morphology
-        morphologyEx(fgMaskMOG2, binaryImg, CV_MOP_CLOSE, element);
+        morphologyEx(fgMaskMOG2, binaryImg, MORPH_BLACKHAT, element);
         threshold(binaryImg, binaryImg, 128, 255, CV_THRESH_BINARY);
         //find contour
         ContourImg = binaryImg.clone();
