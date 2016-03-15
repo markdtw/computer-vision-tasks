@@ -31,10 +31,18 @@ void convolution (const Mat& in, Mat &Result, float k[][3]) {
 
         for (int i=nChannels; i<nChannels*(in.cols - 1); i++) {
             // saturate cast is to limit the value to 0~255, it does: min(max(round(value), 0), 255)
+            /* CORRELATION (NOT FLIPPING THE KERNEL)
+            *output++ = saturate_cast<uchar>(
+                    k[0][0]*next[i+nChannels]     + k[0][1]*next[i]     + k[0][2]*next[i-nChannels]     +
+                    k[1][0]*current[i+nChannels]  + k[1][1]*current[i]  + k[1][2]*current[i-nChannels]  +
+                    k[2][0]*previous[i+nChannels] + k[2][1]*previous[i] + k[2][2]*previous[i-nChannels]);
+
+            */
             *output++ = saturate_cast<uchar>(
                     k[0][0]*previous[i-nChannels] + k[0][1]*previous[i] + k[0][2]*previous[i+nChannels] +
                     k[1][0]*current[i-nChannels]  + k[1][1]*current[i]  + k[1][2]*current[i+nChannels] +
                     k[2][0]*next[i-nChannels]     + k[2][1]*next[i]     + k[2][2]*next[i+nChannels]);
+            
         }
     }
     // On the borders of the image the upper notation results inexistent pixel locations.
