@@ -12,12 +12,21 @@ class MotionTrack {
             theObject[0] = 0;
             theObject[1] = 0;
             objectBoundingRectangle = Rect(0, 0, 0, 0);
+            pause = false;
+            objectDetected = false;
         }
         ~MotionTrack() {}
 
+        void captureVideo (int webcam) {
+            capture.open(webcam);
+            if (!capture.isOpened()) {
+                cout << "CAM CANNOT BE OPENED" << endl;
+                return;
+            }
+        }
+
         void searchForMovement(Mat thresholdImage, Mat &cameraFeed) {
 
-            bool objectDetected = false;
             Mat temp;
             thresholdImage.copyTo(temp);
 
@@ -26,7 +35,7 @@ class MotionTrack {
             vector<Vec4i> hierarchy;
 
             // find contours of filtered image, retrieves external contours
-            findContours(temp,contours,hierarchy,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE );
+            findContours(temp, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 
             // if contours vector is not empty, we have found some objects
             if (contours.size() > 0)
@@ -63,39 +72,18 @@ class MotionTrack {
             line(cameraFeed, Point(x, y), Point(x + 25, y), Scalar(0, 255, 0), 2);
 
             //write the position of the object to the screen
-            /*
-               stringstream xx;
-               stringstream yy;
-               xx << x;
-               yy << y;
-               putText(cameraFeed, "Tracking at (" + xx.str() + "," + yy.str() + ")", Point(x, y), 1, 1, Scalar(255, 0, 0), 2);
-               */
+            stringstream xx;
+            stringstream yy;
+            xx << x;
+            yy << y;
+            putText(cameraFeed, "Tracking at (" + xx.str() + "," + yy.str() + ")", Point(x, y), 1, 1, Scalar(255, 0, 0), 2);
         }
 
-        void tracking(int cam, const int SENSITIVITY_VALUE, const int BLUR_SIZE) {
+        void tracking(const int SENSITIVITY_VALUE, const int BLUR_SIZE) {
             // sensitivity value to be used in the absdiff() function
             // size of blur used to smooth the intensity image output from absdiff() function
 
             // original sensitivity_value is 20, blur_size is 10
-
-            // set up the matrices that we will need to compare
-            Mat frame1, frame2;
-            // their grayscale images (needed for absdiff() function)
-            Mat grayImage1, grayImage2;
-            // resulting difference image
-            Mat differenceImage;
-            // thresholded difference image (for use in findContours() function)
-            Mat thresholdImage;
-
-            int key;
-            bool pause = false;
-            // video capture object.
-            VideoCapture capture;
-            capture.open(cam);
-            if (!capture.isOpened()) {
-                cout << "CAM CANNOT BE FOUND" << endl;
-                return;
-            }
 
             for (;;) {
 
@@ -132,26 +120,34 @@ class MotionTrack {
 
                 //show our captured frame
                 imshow("Camera Frame", frame1);
-                key = waitKey(30);
-                if (key == 27) break;
-                if (key == 112) {
-                    pause = true;
-                    while (pause) {
-                        int k = waitKey(30);
-                        if (k == 112) pause = false;
-                    }
-                }
+                waitKey(30);
             }
             capture.release();
         }
 
     private:
 
+        VideoCapture capture;
         // just one object to search for and keep track of its position.
         int theObject[2];
         // bounding rectangle of the object, we will use the center of this as its position.
         Rect objectBoundingRectangle;
 
+        // set up the matrices that we will need to compare
+        Mat frame1, frame2;
+        // their grayscale images (needed for absdiff() function)
+        Mat grayImage1, grayImage2;
+        // resulting difference image
+        Mat differenceImage;
+        // thresholded difference image (for use in findContours() function)
+        Mat thresholdImage;
+
+        // key for waitKey
+        int key;
+        // determine whether pause or not
+        bool pause;
+        // for method 'searchForMovement'
+        bool objectDetected;
 };
 
 int main (int argc, char** argv) {
@@ -166,8 +162,9 @@ int main (int argc, char** argv) {
     namedWindow("Camera Frame");
 
     MotionTrack *mt = new MotionTrack();
+    mt->captureVideo(atoi(argv[1]));
 
-    mt->tracking(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]));
+    mt->tracking(atoi(argv[2]), atoi(argv[3]));
 
     destroyAllWindows();
     return EXIT_SUCCESS;
