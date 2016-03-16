@@ -2,9 +2,12 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
 #include <opencv2/video.hpp>
+#include <csignal>
 #include <iostream>
 using namespace cv;
 using namespace std;
+
+bool stop = false;
 
 class BgSubtraction {
     public:
@@ -25,7 +28,7 @@ class BgSubtraction {
         void applyBS () {
 
             //read input data. ESC or 'q' for quitting
-            for (;;) {
+            while (!stop) {
                 //read the current frame
                 capture >> frame;
                 //update the background model
@@ -46,6 +49,8 @@ class BgSubtraction {
         Ptr<BackgroundSubtractor> pMOG2;    // MOG2 Background subtractor
 };
 
+void signal_handler (int signal) { stop = true; }
+
 int main(int argc, char** argv) {
     if(argc != 2) {
         cout << "Usage: ./bg <webcam id>" << endl;
@@ -58,6 +63,8 @@ int main(int argc, char** argv) {
 
     BgSubtraction *bgs = new BgSubtraction();
     bgs->captureVideo(atoi(argv[1]));
+
+    signal(SIGINT, signal_handler);
     bgs->applyBS();
 
     //destroy GUI windows

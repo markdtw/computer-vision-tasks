@@ -2,9 +2,12 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
 #include <opencv2/video.hpp>
+#include <csignal>
 #include <iostream>
 using namespace std;
 using namespace cv;
+
+bool stop = false;
 
 class MotionTrack {
     public:
@@ -18,6 +21,7 @@ class MotionTrack {
         ~MotionTrack() {}
 
         void captureVideo (int webcam) {
+            capture.release();
             capture.open(webcam);
             if (!capture.isOpened()) {
                 cout << "CAM CANNOT BE OPENED" << endl;
@@ -56,7 +60,7 @@ class MotionTrack {
                 int xpos = objectBoundingRectangle.x + objectBoundingRectangle.width/2;
                 int ypos = objectBoundingRectangle.y + objectBoundingRectangle.height/2;
 
-                //update the objects positions by changing the 'theObject' array values
+                // update the objects positions by changing the 'theObject' array values
                 theObject[0] = xpos;
                 theObject[1] = ypos;
             }
@@ -64,19 +68,21 @@ class MotionTrack {
             int x = theObject[0];
             int y = theObject[1];
 
-            //draw crosshairs around the object
+            // draw crosshairs around the object
             circle(cameraFeed, Point(x, y), 20, Scalar(0, 255, 0), 2);
             line(cameraFeed, Point(x, y), Point(x, y - 25), Scalar(0, 255, 0), 2);
             line(cameraFeed, Point(x, y), Point(x, y + 25), Scalar(0, 255, 0), 2);
             line(cameraFeed, Point(x, y), Point(x - 25, y), Scalar(0, 255, 0), 2);
             line(cameraFeed, Point(x, y), Point(x + 25, y), Scalar(0, 255, 0), 2);
 
-            //write the position of the object to the screen
+            // write the position of the object to the screen
+            /*
             stringstream xx;
             stringstream yy;
             xx << x;
             yy << y;
             putText(cameraFeed, "Tracking at (" + xx.str() + "," + yy.str() + ")", Point(x, y), 1, 1, Scalar(255, 0, 0), 2);
+            */
         }
 
         void tracking(const int SENSITIVITY_VALUE, const int BLUR_SIZE) {
@@ -85,7 +91,7 @@ class MotionTrack {
 
             // original sensitivity_value is 20, blur_size is 10
 
-            for (;;) {
+            while (!stop) {
 
                 // read first frame
                 capture.read(frame1);
@@ -150,6 +156,8 @@ class MotionTrack {
         bool objectDetected;
 };
 
+void signal_handler (int signal) { stop = true; }
+
 int main (int argc, char** argv) {
     if (argc != 4) {
         cout << "Usage: ./out <WEBCAM> <SENSITIVITY_VALUE> <BLUR_SIZE>" << endl;
@@ -164,6 +172,7 @@ int main (int argc, char** argv) {
     MotionTrack *mt = new MotionTrack();
     mt->captureVideo(atoi(argv[1]));
 
+    signal(SIGINT, signal_handler);
     mt->tracking(atoi(argv[2]), atoi(argv[3]));
 
     destroyAllWindows();
