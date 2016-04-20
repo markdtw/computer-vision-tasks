@@ -70,10 +70,10 @@ class MotionTrack {
 
             // draw crosshairs around the object
             circle(cameraFeed, Point(x, y), 20, Scalar(0, 255, 0), 2);
-            line(cameraFeed, Point(x, y), Point(x, y - 25), Scalar(0, 255, 0), 2);
-            line(cameraFeed, Point(x, y), Point(x, y + 25), Scalar(0, 255, 0), 2);
-            line(cameraFeed, Point(x, y), Point(x - 25, y), Scalar(0, 255, 0), 2);
-            line(cameraFeed, Point(x, y), Point(x + 25, y), Scalar(0, 255, 0), 2);
+            //line(cameraFeed, Point(x, y), Point(x, y - 25), Scalar(0, 255, 0), 2);
+            //line(cameraFeed, Point(x, y), Point(x, y + 25), Scalar(0, 255, 0), 2);
+            //line(cameraFeed, Point(x, y), Point(x - 25, y), Scalar(0, 255, 0), 2);
+            //line(cameraFeed, Point(x, y), Point(x + 25, y), Scalar(0, 255, 0), 2);
 
             // write the position of the object to the screen
             /*
