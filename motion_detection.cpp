@@ -14,7 +14,8 @@ class MotionTrack {
         MotionTrack() {
             theObject[0] = 0;
             theObject[1] = 0;
-            objectBoundingRectangle = Rect(0, 0, 0, 0);
+            objectBoundingRectangle[0] = Rect(0, 0, 0, 0);
+            objectBoundingRectangle[1] = Rect(0, 0, 0, 0);
             pause = false;
             objectDetected = false;
         }
@@ -56,33 +57,31 @@ class MotionTrack {
 
                 // make a bounding rectangle around the largest contour then find its centroid
                 // this will be the object's final estimated position.
-                objectBoundingRectangle = boundingRect(largestContourVec.at(0));
-                int xpos = objectBoundingRectangle.x + objectBoundingRectangle.width/2;
-                int ypos = objectBoundingRectangle.y + objectBoundingRectangle.height/2;
+                objectBoundingRectangle[0] = boundingRect(largestContourVec.at(0));
 
-                // update the objects positions by changing the 'theObject' array values
-                theObject[0] = xpos;
-                theObject[1] = ypos;
+                // get position to draw
+                /*
+                int xpos = objectBoundingRectangle[0].x + objectBoundingRectangle[0].width/2;
+                int ypos = objectBoundingRectangle[0].y + objectBoundingRectangle[0].height/2;
+                int x = xpos;
+                int y = ypos;
+                circle(cameraFeed, Point(x, y), 20, Scalar(0, 255, 0), 2);
+                */
+
+                // draw rectangle x1, y1, x2, y2
+                int x1 = objectBoundingRectangle[0].x;
+                int y1 = objectBoundingRectangle[0].y;
+                int x2 = x1 + objectBoundingRectangle[0].width;
+                int y2 = y1 + objectBoundingRectangle[0].height;
+                rectangle(cameraFeed, Point(x1, y1), Point(x2, y2), Scalar(0, 255, 0), 2);
+
+                // write the position of the object to the screen
+                stringstream xx;
+                stringstream yy;
+                xx << (x1+x2)/2;
+                yy << (y1+y2)/2;
+                putText(cameraFeed, "Tracking at ("+xx.str()+","+yy.str()+")", Point((x1+x2)/2, (y1+y2)/2), 1, 1, Scalar(255, 0, 0), 2);
             }
-
-            int x = theObject[0];
-            int y = theObject[1];
-
-            // draw crosshairs around the object
-            circle(cameraFeed, Point(x, y), 20, Scalar(0, 255, 0), 2);
-            //line(cameraFeed, Point(x, y), Point(x, y - 25), Scalar(0, 255, 0), 2);
-            //line(cameraFeed, Point(x, y), Point(x, y + 25), Scalar(0, 255, 0), 2);
-            //line(cameraFeed, Point(x, y), Point(x - 25, y), Scalar(0, 255, 0), 2);
-            //line(cameraFeed, Point(x, y), Point(x + 25, y), Scalar(0, 255, 0), 2);
-
-            // write the position of the object to the screen
-            /*
-            stringstream xx;
-            stringstream yy;
-            xx << x;
-            yy << y;
-            putText(cameraFeed, "Tracking at (" + xx.str() + "," + yy.str() + ")", Point(x, y), 1, 1, Scalar(255, 0, 0), 2);
-            */
         }
 
         void tracking(const int SENSITIVITY_VALUE, const int BLUR_SIZE) {
@@ -117,7 +116,7 @@ class MotionTrack {
                 blur(thresholdImage, thresholdImage, Size(BLUR_SIZE, BLUR_SIZE));
 
                 // threshold again to obtain binary image from blur output
-                threshold(thresholdImage,thresholdImage,SENSITIVITY_VALUE,255,THRESH_BINARY);
+                threshold(thresholdImage, thresholdImage, SENSITIVITY_VALUE, 255, THRESH_BINARY);
 
                 //show the threshold image after blur
                 imshow("Final Threshold Image", thresholdImage);
@@ -137,7 +136,7 @@ class MotionTrack {
         // just one object to search for and keep track of its position.
         int theObject[2];
         // bounding rectangle of the object, we will use the center of this as its position.
-        Rect objectBoundingRectangle;
+        Rect objectBoundingRectangle[2];
 
         // set up the matrices that we will need to compare
         Mat frame1, frame2;
