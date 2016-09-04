@@ -26,7 +26,6 @@ class BgSubtraction {
         }
 
         void applyBS () {
-
             //read input data. ESC or 'q' for quitting
             while (!stop) {
                 //read the current frame
