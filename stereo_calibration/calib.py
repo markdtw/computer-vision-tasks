@@ -1,3 +1,4 @@
+from matplotlib import pyplot as plt
 import numpy as np
 import cv2
 import glob
@@ -11,16 +12,54 @@ r_goodpair = []
 chessboard_flags = cv2.CALIB_CB_ADAPTIVE_THRESH | cv2.CALIB_CB_NORMALIZE_IMAGE
 cornersub_criteria = (cv2.TERM_CRITERIA_COUNT + cv2.TERM_CRITERIA_EPS, 30, 0.01)
 stereocalib_criteria = (cv2.TERM_CRITERIA_COUNT + cv2.TERM_CRITERIA_EPS, 100, 1e-5)
-stereocalib_flags = cv2.CALIB_FIX_ASPECT_RATIO | cv2.CALIB_ZERO_TANGENT_DIST | cv2.CALIB_SAME_FOCAL_LENGTH |\
-        cv2.CALIB_RATIONAL_MODEL | cv2.CALIB_FIX_K3 | cv2.CALIB_FIX_K4 | cv2.CALIB_FIX_K5
+stereocalib_flags = cv2.CALIB_FIX_ASPECT_RATIO + cv2.CALIB_ZERO_TANGENT_DIST + cv2.CALIB_SAME_FOCAL_LENGTH + \
+        cv2.CALIB_RATIONAL_MODEL + cv2.CALIB_FIX_K3 + cv2.CALIB_FIX_K4 + cv2.CALIB_FIX_K5
 
+def numDispsCallBack(x):
+    pass
+def bSizeCallBack(x):
+    pass
 
-def stereoRectificationProcess(alpha, retval, cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, R, T, E, F):
+def stereoRectificationProcess(cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, R, T, E, F):
     R1, R2, P1, P2, Q, roi1, roi2 = cv2.stereoRectify( \
-            cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, (640, 480), R, T, alpha=alpha)
+            cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, (640, 480), R, T)
     l_maps = cv2.initUndistortRectifyMap(cameraMatrix1, distCoeffs1, R1, P1, (640, 480), cv2.CV_16SC2)
     r_maps = cv2.initUndistortRectifyMap(cameraMatrix2, distCoeffs2, R2, P2, (640, 480), cv2.CV_16SC2)
 
+    lcap = cv2.VideoCapture(1)
+    rcap = cv2.VideoCapture(2)
+    cv2.namedWindow('disparity_frame')
+    cv2.createTrackbar('numDisparities', 'disparity_frame', 1, 20, numDispsCallBack)
+    cv2.createTrackbar('blockSize', 'disparity_frame', 7, 30, bSizeCallBack)
+    
+    while(True):
+        lret, lframe = lcap.read()
+        rret, rframe = rcap.read()
+        lframe_remap = cv2.remap(lframe, l_maps[0], l_maps[1], cv2.INTER_LINEAR)
+        rframe_remap = cv2.remap(rframe, r_maps[0], r_maps[1], cv2.INTER_LINEAR)
+        lremap_gray = cv2.cvtColor(lframe_remap, cv2.COLOR_BGR2GRAY)
+        rremap_gray = cv2.cvtColor(rframe_remap, cv2.COLOR_BGR2GRAY)
+
+        numDisparitiesCallBack = cv2.getTrackbarPos('numDisparities', 'disparity_frame')
+        blockSizeCallBack = cv2.getTrackbarPos('blockSize', 'disparity_frame')
+        blockSizeCallBack = blockSizeCallBack > 1 and blockSizeCallBack or 2
+        
+        stereo = cv2.StereoBM_create(numDisparities=numDisparitiesCallBack*16, blockSize=blockSizeCallBack*2+1)
+        disparity = stereo.compute(lremap_gray, rremap_gray)
+        cv2.imshow('disparity_frame', disparity)
+
+        cv2.imshow('left_webcam remap', lframe_remap)
+        cv2.imshow('right_webcam remap', rframe_remap)
+        key = cv2.waitKey(5)&0xFF
+        if key == 27 or key == ord('q'):
+            print('bye')
+            break
+
+    lcap.release()
+    rcap.release()
+    cv2.destroyAllWindows()
+
+    """
     for l, r in zip(l_goodpair, r_goodpair):
         l_imgremap = cv2.remap(l, l_maps[0], l_maps[1], cv2.INTER_LINEAR)
         r_imgremap = cv2.remap(r, r_maps[0], r_maps[1], cv2.INTER_LINEAR)
@@ -28,6 +67,7 @@ def stereoRectificationProcess(alpha, retval, cameraMatrix1, distCoeffs1, camera
         cv2.imshow('left image_remap', l_imgremap)
         cv2.imshow('right image_remap', r_imgremap)
         cv2.waitKey(500)
+    """
 
 def getCalibratefromStereoImage(objpoints, l_imgpoints, r_imgpoints):
     
@@ -60,7 +100,7 @@ def drawChessboard(height, width):
     l_images = glob.glob('images/left*.png')
     r_images = glob.glob('images/right*.png')
 
-    for cnt in range(1, 16):
+    for cnt in range(1, len(l_images)+1):
         l_img = cv2.imread('images/left'+str(cnt)+'.png')
         r_img = cv2.imread('images/right'+str(cnt)+'.png')
 
@@ -111,6 +151,8 @@ if __name__ == '__main__':
             getCalibratefromStereoImage(objpoints, l_imgpoints, r_imgpoints)
 
     # Step 2.5 TODO: Save the calibration stats to disk for future use
+
+
     print ('rectifying...')
     # Step 3: Stereo rectification
-    stereoRectificationProcess(1, retval, cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, R, T, E, F)
+    stereoRectificationProcess(cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, R, T, E, F)
