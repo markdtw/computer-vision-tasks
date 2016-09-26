@@ -42,6 +42,4 @@ def shot(webcamId, webcamId2):
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        sys.exit('missing 2 argument: webcamId1 webcamId2')
-    shot(int(sys.argv[1]), int(sys.argv[2]))
+    shot(1, 2)

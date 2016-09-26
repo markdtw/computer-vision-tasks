@@ -20,12 +20,26 @@ def numDispsCallBack(x):
 def bSizeCallBack(x):
     pass
 
-def stereoRectificationProcess(cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, R, T, E, F):
+def stereoRectificationProcess(rectify_scale, cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, R, T, E, F):
     R1, R2, P1, P2, Q, roi1, roi2 = cv2.stereoRectify( \
-            cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, (640, 480), R, T)
+            cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, (640, 480), R, T, alpha=rectify_scale)
     l_maps = cv2.initUndistortRectifyMap(cameraMatrix1, distCoeffs1, R1, P1, (640, 480), cv2.CV_16SC2)
     r_maps = cv2.initUndistortRectifyMap(cameraMatrix2, distCoeffs2, R2, P2, (640, 480), cv2.CV_16SC2)
 
+    
+    for l, r in zip(l_goodpair, r_goodpair):
+        l_gray = cv2.cvtColor(l, cv2.COLOR_BGR2GRAY)
+        r_gray = cv2.cvtColor(r, cv2.COLOR_BGR2GRAY)
+        l_imgremap = cv2.remap(l_gray, l_maps[0], l_maps[1], cv2.INTER_LINEAR)
+        r_imgremap = cv2.remap(r_gray, r_maps[0], r_maps[1], cv2.INTER_LINEAR)
+
+        cv2.imshow('left image_remap', l_imgremap)
+        cv2.imshow('right image_remap', r_imgremap)
+        cv2.waitKey(500)
+
+    cv2.destroyAllWindows()
+
+    """
     lcap = cv2.VideoCapture(1)
     rcap = cv2.VideoCapture(2)
     cv2.namedWindow('disparity_frame')
@@ -33,8 +47,10 @@ def stereoRectificationProcess(cameraMatrix1, distCoeffs1, cameraMatrix2, distCo
     cv2.createTrackbar('blockSize', 'disparity_frame', 7, 30, bSizeCallBack)
     
     while(True):
+        
         lret, lframe = lcap.read()
         rret, rframe = rcap.read()
+        
         lframe_remap = cv2.remap(lframe, l_maps[0], l_maps[1], cv2.INTER_LINEAR)
         rframe_remap = cv2.remap(rframe, r_maps[0], r_maps[1], cv2.INTER_LINEAR)
         lremap_gray = cv2.cvtColor(lframe_remap, cv2.COLOR_BGR2GRAY)
@@ -58,22 +74,13 @@ def stereoRectificationProcess(cameraMatrix1, distCoeffs1, cameraMatrix2, distCo
     lcap.release()
     rcap.release()
     cv2.destroyAllWindows()
-
     """
-    for l, r in zip(l_goodpair, r_goodpair):
-        l_imgremap = cv2.remap(l, l_maps[0], l_maps[1], cv2.INTER_LINEAR)
-        r_imgremap = cv2.remap(r, r_maps[0], r_maps[1], cv2.INTER_LINEAR)
-
-        cv2.imshow('left image_remap', l_imgremap)
-        cv2.imshow('right image_remap', r_imgremap)
-        cv2.waitKey(500)
-    """
-
+    
 def getCalibratefromStereoImage(objpoints, l_imgpoints, r_imgpoints):
     
     # from OpenCV docs: if any of CV_CALIB_FIX_ASPECT_RATIO... are specified, the matrix components must be initialized.
-    cameraMatrix1 = None
-    cameraMatrix2 = None
+    cameraMatrix1 = cv2.initCameraMatrix2D(objpoints, l_imgpoints, (640, 480), 0);
+    cameraMatrix2 = cv2.initCameraMatrix2D(objpoints, r_imgpoints, (640, 480), 0);
     distCoeffs1 = None
     distCoeffs2 = None
 
@@ -97,8 +104,8 @@ def drawChessboard(height, width):
     l_imgpoints = [] # 2d points in left image plane.
     r_imgpoints = [] # 2d points in right image plane.
     
-    l_images = glob.glob('images/left*.png')
-    r_images = glob.glob('images/right*.png')
+    l_images = glob.glob('images_treasure/left*.png')
+    r_images = glob.glob('images_treasure/right*.png')
 
     for cnt in range(1, len(l_images)+1):
         l_img = cv2.imread('images/left'+str(cnt)+'.png')
@@ -131,19 +138,21 @@ def drawChessboard(height, width):
             cv2.drawChessboardCorners(r_img, (width, height), r_corners, r_ret)
             cv2.imshow('left chessboard', l_img)
             cv2.imshow('right chessboard', r_img)
-            cv2.waitKey(500)
-            """
+            cv2.waitKey(300)
+            """            
 
     cv2.destroyAllWindows()
     return l_imgpoints, r_imgpoints, objpoints
 
 if __name__ == '__main__':
-    print ('usage: python calib.py height width (default 7, 9)')
+    print ('usage: python calib.py height width (default 7, 10)')
     # Step 1: For each stereo pair we need to find the chessboard and store the keypoints.
-    if len(sys.argv) != 3:
-        l_imgpoints, r_imgpoints, objpoints = drawChessboard(7, 9)
+    if len(sys.argv) == 2:
+        rectify_scale = float(sys.argv[1])
     else:
-        l_imgpoints, r_imgpoints, objpoints = drawChessboard(int(sys.argv[1]), int(sys.argv[2]))
+        rectify_scale = 1
+    
+    l_imgpoints, r_imgpoints, objpoints = drawChessboard(7, 10)
 
     print ('calibrating...')
     # Step 2: Compute calibration.
@@ -152,7 +161,6 @@ if __name__ == '__main__':
 
     # Step 2.5 TODO: Save the calibration stats to disk for future use
 
-
     print ('rectifying...')
     # Step 3: Stereo rectification
-    stereoRectificationProcess(cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, R, T, E, F)
+    stereoRectificationProcess(rectify_scale, cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, R, T, E, F)
