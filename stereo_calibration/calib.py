@@ -34,10 +34,9 @@ def spRCallBack(x):
 
 def tuneDisparity(lframe, rframe, l_maps, r_maps):
         
+    # use the rectified data to do remap on webcams
     lframe_remap = cv2.remap(lframe, l_maps[0], l_maps[1], cv2.INTER_LINEAR)
     rframe_remap = cv2.remap(rframe, r_maps[0], r_maps[1], cv2.INTER_LINEAR)
-    lremap_gray = cv2.cvtColor(lframe_remap, cv2.COLOR_BGR2GRAY)
-    rremap_gray = cv2.cvtColor(rframe_remap, cv2.COLOR_BGR2GRAY)
 
     minDisp = cv2.getTrackbarPos('minDisparity', 'disparity_parameters')
     numDisp = cv2.getTrackbarPos('numDisparities', 'disparity_parameters') * 16
@@ -69,8 +68,11 @@ def tuneDisparity(lframe, rframe, l_maps, r_maps):
 
 
 def stereoRectificationProcess(rectify_scale, cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, R, T, E, F):
+
+    # call cv2.stereoRectify to get the rectification parameters
     R1, R2, P1, P2, Q, roi1, roi2 = cv2.stereoRectify( \
             cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, (640, 480), R, T, alpha=rectify_scale)
+    # prepare to remap the webcams
     l_maps = cv2.initUndistortRectifyMap(cameraMatrix1, distCoeffs1, R1, P1, (640, 480), cv2.CV_16SC2)
     r_maps = cv2.initUndistortRectifyMap(cameraMatrix2, distCoeffs2, R2, P2, (640, 480), cv2.CV_16SC2)
 
@@ -88,6 +90,7 @@ def stereoRectificationProcess(rectify_scale, cameraMatrix1, distCoeffs1, camera
     cv2.destroyAllWindows()
     """
 
+    # read in webcams' frames and prepare for disparity computing parameter tuning
     lcap = cv2.VideoCapture(1)
     rcap = cv2.VideoCapture(2)
     cv2.namedWindow('disparity_parameters')
@@ -109,6 +112,7 @@ def stereoRectificationProcess(rectify_scale, cameraMatrix1, distCoeffs1, camera
         lret, lframe = lcap.read()
         rret, rframe = rcap.read()
         
+        # show disparity map and tune the paramters in real-time
         tuneDisparity(lframe, rframe, l_maps, r_maps)
 
         key = cv2.waitKey(5)&0xFF
@@ -119,7 +123,7 @@ def stereoRectificationProcess(rectify_scale, cameraMatrix1, distCoeffs1, camera
     lcap.release()
     rcap.release()
     cv2.destroyAllWindows()
-    
+    # done
     
 def getCalibratefromStereoImage(objpoints, l_imgpoints, r_imgpoints):
     
@@ -139,7 +143,8 @@ def getCalibratefromStereoImage(objpoints, l_imgpoints, r_imgpoints):
 
 def drawChessboard(height, width):
     
-    # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
+    # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0) for 3-d use,
+    # which means we don't really need
     objp = np.zeros((height*width,3), np.float32)
     objp[:,:2] = np.mgrid[0:width,0:height].T.reshape(-1,2)
 
@@ -149,8 +154,8 @@ def drawChessboard(height, width):
     l_imgpoints = [] # 2d points in left image plane.
     r_imgpoints = [] # 2d points in right image plane.
     
+    # count how many pairs for for loop to loop through
     l_images = glob.glob('images_treasure/left*.png')
-    r_images = glob.glob('images_treasure/right*.png')
 
     for cnt in range(1, len(l_images)+1):
         l_img = cv2.imread('images_treasure/left'+str(cnt)+'.png')
@@ -191,12 +196,8 @@ def drawChessboard(height, width):
 
 if __name__ == '__main__':
     print ('usage: python calib.py height width (default 7, 10)')
-    # Step 1: For each stereo pair we need to find the chessboard and store the keypoints.
-    if len(sys.argv) == 2:
-        rectify_scale = float(sys.argv[1])
-    else:
-        rectify_scale = 0
     
+    # Step 1: For each stereo pair we need to find the chessboard and store the keypoints.
     l_imgpoints, r_imgpoints, objpoints = drawChessboard(7, 10)
 
     print ('calibrating...')
@@ -207,5 +208,11 @@ if __name__ == '__main__':
     # Step 2.5 TODO: Save the calibration stats to disk for future use
 
     print ('rectifying...')
+    """
     # Step 3: Stereo rectification
+    if len(sys.argv) == 2:
+        rectify_scale = float(sys.argv[1])
+    else:
+        rectify_scale = 0
     stereoRectificationProcess(rectify_scale, cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, R, T, E, F)
+    """
