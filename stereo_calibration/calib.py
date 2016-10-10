@@ -208,11 +208,9 @@ if __name__ == '__main__':
     # Step 2.5 TODO: Save the calibration stats to disk for future use
 
     print ('rectifying...')
-    """
     # Step 3: Stereo rectification
     if len(sys.argv) == 2:
         rectify_scale = float(sys.argv[1])
     else:
         rectify_scale = 0
     stereoRectificationProcess(rectify_scale, cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, R, T, E, F)
-    """
