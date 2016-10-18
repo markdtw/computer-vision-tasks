@@ -1,4 +1,5 @@
 from matplotlib import pyplot as plt
+import pdb
 import numpy as np
 import cv2
 import glob
@@ -32,7 +33,7 @@ def spWCallBack(x):
 def spRCallBack(x):
     pass
 
-def tuneDisparity(lframe, rframe, l_maps, r_maps):
+def tuneDisparity(lframe, rframe, l_maps, r_maps, focal_length):
         
     # use the rectified data to do remap on webcams
     lframe_remap = cv2.remap(lframe, l_maps[0], l_maps[1], cv2.INTER_LINEAR)
@@ -62,9 +63,16 @@ def tuneDisparity(lframe, rframe, l_maps, r_maps):
             speckleRange=speckleRange)
 
     disparity = stereo.compute(lframe_remap, rframe_remap).astype(np.float32) / 16.0
-    cv2.imshow('disparaty_map', (disparity - minDisp) / numDisp)
-    #cv2.imshow('left_webcam remap', lframe_remap)
-    #cv2.imshow('right_webcam remap', rframe_remap)
+    optimal_disparity = (disparity - minDisp) / numDisp
+    cv2.imshow('disparaty_map', optimal_disparity)
+
+    baseline_cam = 9.3
+    distance = baseline_cam * focal_length / optimal_disparity
+
+    print ("distance in center: ", distance[320][240]/100)
+    
+    cv2.imshow('left_webcam remap', lframe_remap)
+    cv2.imshow('right_webcam remap', rframe_remap)
 
 
 def stereoRectificationProcess(rectify_scale, cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, R, T, E, F):
@@ -75,6 +83,14 @@ def stereoRectificationProcess(rectify_scale, cameraMatrix1, distCoeffs1, camera
     # prepare to remap the webcams
     l_maps = cv2.initUndistortRectifyMap(cameraMatrix1, distCoeffs1, R1, P1, (640, 480), cv2.CV_16SC2)
     r_maps = cv2.initUndistortRectifyMap(cameraMatrix2, distCoeffs2, R2, P2, (640, 480), cv2.CV_16SC2)
+    with open('lmaps.txt', 'wb') as f:
+        np.savetxt(f, l_maps[0])
+        np.savetxt(f, l_maps[1])
+
+    pdb.set_trace()
+
+    focal_length_x = cameraMatrix1[0][0]
+    #focal_length_y = cameraMatrix1[1][1]
 
     """
     for l, r in zip(l_goodpair, r_goodpair):
@@ -113,7 +129,7 @@ def stereoRectificationProcess(rectify_scale, cameraMatrix1, distCoeffs1, camera
         rret, rframe = rcap.read()
         
         # show disparity map and tune the paramters in real-time
-        tuneDisparity(lframe, rframe, l_maps, r_maps)
+        tuneDisparity(lframe, rframe, l_maps, r_maps, focal_length_x)
 
         key = cv2.waitKey(5)&0xFF
         if key == 27 or key == ord('q'):
@@ -182,15 +198,6 @@ def drawChessboard(height, width):
             r_imgpoints.append(r_corners)
             objpoints.append(objp)
 
-            """
-            # Draw and display the corners
-            cv2.drawChessboardCorners(l_img, (width, height), l_corners, l_ret)
-            cv2.drawChessboardCorners(r_img, (width, height), r_corners, r_ret)
-            cv2.imshow('left chessboard', l_img)
-            cv2.imshow('right chessboard', r_img)
-            cv2.waitKey(300)
-            """            
-
     cv2.destroyAllWindows()
     return l_imgpoints, r_imgpoints, objpoints
 
@@ -205,7 +212,26 @@ if __name__ == '__main__':
     retval, cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, R, T, E, F = \
             getCalibratefromStereoImage(objpoints, l_imgpoints, r_imgpoints)
 
-    # Step 2.5 TODO: Save the calibration stats to disk for future use
+    # Step 2.5: Save the calibration stats to disk for future use
+    """
+    with open('c1d1c2d2RTEF.txt', 'wb') as f:
+        #f.write("cameraMatrix1:\n")
+        np.savetxt(f, cameraMatrix1)
+        #f.write("distCoeffs1:\n")
+        np.savetxt(f, distCoeffs1)
+        #f.write("cameraMatrix2:\n")
+        np.savetxt(f, cameraMatrix2)
+        #f.write("distCoeffs2:\n")
+        np.savetxt(f, distCoeffs2)
+        #f.write("R:\n")
+        np.savetxt(f, R)
+        #f.write("T:\n")
+        np.savetxt(f, T)
+        #f.write("E:\n")
+        np.savetxt(f, E)
+        #f.write("F:\n")
+        np.savetxt(f, F)
+    """
 
     print ('rectifying...')
     # Step 3: Stereo rectification
