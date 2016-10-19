@@ -7,18 +7,19 @@
 
 void remapAndDisparity(CvMat* l_remap0, CvMat* l_remap1, CvMat* r_remap0, CvMat* r_remap1)
 {
+    /* Variable initialization */
+    CvArr *l_frame_remap = NULL;
+    CvArr *r_frame_remap = NULL;
+    CvArr *disparity_map = NULL;
+    IplImage *l_frame = NULL;
+    IplImage *r_frame = NULL;
+    
     /* 
      * Open the goddamned webcams using dumbass C-API.
      * This is cv2.VideoCapture(id) in python
      */
     CvCapture *l_cap = cvCaptureFromCAM(1);
     CvCapture *r_cap = cvCaptureFromCAM(2);
-
-    CvArr *l_frame_remap = NULL;
-    CvArr *r_frame_remap = NULL;
-    CvArr *disparity_map = NULL;
-    IplImage *l_frame = NULL;
-    IplImage *r_frame = NULL;
 
     /* Time to remap the frames!!!! */
     while (1) {
