@@ -87,8 +87,6 @@ def stereoRectificationProcess(rectify_scale, cameraMatrix1, distCoeffs1, camera
         np.savetxt(f, l_maps[0])
         np.savetxt(f, l_maps[1])
 
-    pdb.set_trace()
-
     focal_length_x = cameraMatrix1[0][0]
     #focal_length_y = cameraMatrix1[1][1]
 
@@ -171,11 +169,11 @@ def drawChessboard(height, width):
     r_imgpoints = [] # 2d points in right image plane.
     
     # count how many pairs for for loop to loop through
-    l_images = glob.glob('images_treasure/left*.png')
+    l_images = glob.glob('images/left*.png')
 
     for cnt in range(1, len(l_images)+1):
-        l_img = cv2.imread('images_treasure/left'+str(cnt)+'.png')
-        r_img = cv2.imread('images_treasure/right'+str(cnt)+'.png')
+        l_img = cv2.imread('images/left'+str(cnt)+'.png')
+        r_img = cv2.imread('images/right'+str(cnt)+'.png')
 
         l_gray = cv2.cvtColor(l_img, cv2.COLOR_BGR2GRAY)
         r_gray = cv2.cvtColor(r_img, cv2.COLOR_BGR2GRAY)
@@ -211,7 +209,8 @@ if __name__ == '__main__':
     # Step 2: Compute calibration.
     retval, cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2, R, T, E, F = \
             getCalibratefromStereoImage(objpoints, l_imgpoints, r_imgpoints)
-
+    
+    pdb.set_trace()
     # Step 2.5: Save the calibration stats to disk for future use
     """
     with open('c1d1c2d2RTEF.txt', 'wb') as f:

@@ -1,4 +1,0 @@
-!/bin/bash
-# usage: ./build FILE_TO_BUILD OUTPUT_FILE_NAME
-cmake -DIN:FILEPATH=${1} -DOUT:STRING=${2} .
-make
